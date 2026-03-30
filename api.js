@@ -41,16 +41,30 @@ async function analyzeImage(base64Image, apiKey) {
         });
 
         const data = await response.json();
+        
+        if (data.error) {
+            throw new Error(`Gemini API Error: ${data.error.message}`);
+        }
+
+        if (!data.candidates || data.candidates.length === 0) {
+            throw new Error("AI 분석 결과가 없습니다. (Safety filter or empty response)");
+        }
+
         const text = data.candidates[0].content.parts[0].text;
         
         // Extract JSON from the response text
         const jsonMatch = text.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
-            return JSON.parse(jsonMatch[0]);
+            try {
+                return JSON.parse(jsonMatch[0]);
+            } catch (pErr) {
+                console.error("JSON Parse Error:", text);
+                throw new Error("AI 응답 형식이 올바르지 않습니다.");
+            }
         }
-        throw new Error("Invalid output format from AI");
+        throw new Error("AI 분석 결과 형식이 잘못되었습니다.");
     } catch (error) {
-        console.error("API Error:", error);
+        console.error("Detailed API Error:", error);
         throw error;
     }
 }

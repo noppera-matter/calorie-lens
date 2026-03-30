@@ -81,12 +81,12 @@ document.addEventListener('DOMContentLoaded', () => {
         loader.classList.remove('hidden');
         
         try {
-            const apiKey = apiKeyInput.value;
+            const apiKey = apiKeyInput.value.trim();
             const analysis = await analyzeImage(base64Image, apiKey);
             updateUI(analysis);
         } catch (error) {
             console.error("Analysis failed:", error);
-            alert("분석 중 오류가 발생했습니다.");
+            alert(`분석 중 오류가 발생했습니다:\n${error.message}`);
         } finally {
             loader.classList.add('hidden');
         }
