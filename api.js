@@ -25,7 +25,7 @@ async function analyzeImage(base64Image, apiKey) {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body:引入JSON.stringify({
+            body: JSON.stringify({
                 contents: [{
                     parts: [
                         { text: "사용자가 촬영한 음식 사진과 손(Size Reference)이 함께 있습니다. 손의 크기를 기준으로 음식의 실제 부피와 양을 가늠하여 총 칼로리와 영양 성분을 분석해주세요. 반드시 한국어로 답변하고, 아래 JSON 형식만 반환하세요. JSON 외의 텍스트는 포함하지 마세요.\n\nJSON 형식:\n{\n  \"totalCalories\": 0,\n  \"carbs\": 0,\n  \"protein\": 0,\n  \"fat\": 0,\n  \"foods\": [{\"name\": \"음식명\", \"calories\": 0}],\n  \"reasoning\": \"손 크기와 대조하여 어떻게 양을 계산했는지에 대한 설명\"\n}" },
