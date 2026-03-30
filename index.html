@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>칼로리 렌즈: 손 대조 기반 칼로리 분석</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div id="app" class="app-container">
+        <!-- Header Section -->
+        <header class="header">
+            <div class="logo">
+                <i class="fas fa-camera-retro"></i>
+                <span class="logo-text">CalorieLens</span>
+            </div>
+            <div class="header-right">
+                <button id="settingsBtn" class="icon-btn"><i class="fas fa-cog"></i></button>
+            </div>
+        </header>
+
+        <!-- Camera Section -->
+        <main class="main-content">
+            <div class="camera-wrapper" id="cameraWrapper">
+                <video id="video" autoplay playsinline></video>
+                
+                <!-- Hand Guide Overlay -->
+                <div class="hand-guide" id="handGuide">
+                    <svg viewBox="0 0 400 600" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M117 387.5C117 387.5 106 357 104.5 319.5C103 282 104.5 259.5 106 242.5C107.5 225.5 117.5 178 126.5 152.5C135.5 127 151.7 89.2 165 74.5C178.3 59.8 190 56.5 204.5 59.5C219 62.5 229 70 236.5 87.5C244 105 241 242.5 241 242.5M241 242.5C241 242.5 272 232 284 227.5C296 223 315.5 223 325 233C334.5 243 331 262.5 321 275.5C311 288.5 270.5 323 270.5 323M270.5 323C270.5 323 294.5 330 307.5 342.5C320.5 355 316 385 292.5 391.5C269 398 259 394 259 394M259 394C259 394 272.5 410.5 275.5 425C278.5 439.5 264.5 456.5 244 456C223.5 455.5 210.5 431.5 210.5 431.5" stroke="white" stroke-width="4" stroke-dasharray="10 10" stroke-linecap="round" />
+                        <path d="M124.5 418.5C113 418.5 86.5 401 70.5 379.5C54.5 358 35.5 320.5 40 289C44.5 257.5 65.5 241.5 84 246C102.5 250.5 124.5 289 124.5 289" stroke="white" stroke-width="4" stroke-dasharray="10 10" stroke-linecap="round" />
+                    </svg>
+                    <div class="guide-text">
+                        <i class="fas fa-hand-paper"></i>
+                        <span>정확한 측정을 위해 가이드에 손을 맞춰주세요</span>
+                    </div>
+                </div>
+
+                <!-- Analysis/Overlay result states -->
+                <div id="loader" class="loader-overlay hidden">
+                    <div class="spinner"></div>
+                    <p>이미지 분석 중...</p>
+                </div>
+            </div>
+
+            <!-- Controls Area -->
+            <div class="controls">
+                <div class="control-row">
+                    <button id="captureBtn" class="capture-btn">
+                        <div class="inner-circle"></div>
+                    </button>
+                </div>
+                <div class="instructions">
+                    음식과 손이 한 화면에 나오도록 촬영하세요
+                </div>
+            </div>
+        </main>
+
+        <!-- Result Section (Slide up) -->
+        <div id="resultPanel" class="result-panel slide-down">
+            <div class="handle"></div>
+            <div class="result-header">
+                <h3>분석 결과</h3>
+                <button id="closeResultBtn" class="close-btn">&times;</button>
+            </div>
+            <div class="result-content">
+                <div class="total-calories">
+                    <span id="calValue">0</span>
+                    <span class="unit">kcal</span>
+                </div>
+                
+                <div class="macro-ratios">
+                    <div class="macro-item car">
+                        <div class="label">탄수화물</div>
+                        <div class="value" id="carValue">0g</div>
+                        <div class="bar-bg"><div class="bar" id="carBar"></div></div>
+                    </div>
+                    <div class="macro-item pro">
+                        <div class="label">단백질</div>
+                        <div class="value" id="proValue">0g</div>
+                        <div class="bar-bg"><div class="bar" id="proBar"></div></div>
+                    </div>
+                    <div class="macro-item fat">
+                        <div class="label">지방</div>
+                        <div class="value" id="fatValue">0g</div>
+                        <div class="bar-bg"><div class="bar" id="fatBar"></div></div>
+                    </div>
+                </div>
+
+                <div class="food-list-container">
+                    <h4>감지된 음식</h4>
+                    <ul id="foodList" class="food-list">
+                        <!-- Items will be added here -->
+                    </ul>
+                </div>
+
+                <div class="ai-comment">
+                    <h4>나의 AI 코멘트</h4>
+                    <p id="aiReasoning">손과의 크기 대조를 통해 음식의 양을 분석합니다.</p>
+                </div>
+            </div>
+            <div class="result-actions">
+                <button id="saveBtn" class="primary-btn">식단 저장하기</button>
+            </div>
+        </div>
+
+        <!-- Settings Modal (Gemini Key) -->
+        <div id="settingsModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>설정</h3>
+                    <button id="closeSettingsBtn" class="close-btn">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="input-group">
+                        <label for="apiKey">Gemini API Key</label>
+                        <input type="password" id="apiKey" placeholder="AIzaSy...">
+                        <p class="help-text">고화질 이미지 분석을 위해 API 키가 필요합니다.</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="saveSettingsBtn" class="primary-btn">저장</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden canvas for capturing -->
+    <canvas id="canvas" style="display:none;"></canvas>
+
+    <script src="api.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
