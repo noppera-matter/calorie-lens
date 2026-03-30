@@ -19,18 +19,19 @@ async function analyzeImage(base64Image, apiKey) {
         });
     }
 
-    // 시도할 모델 및 버전 조합
+    // 검증된 모델 및 버전 조합 리스트
     const attemptConfigs = [
-        { version: 'v1', model: 'gemini-1.5-flash' },
-        { version: 'v1beta', model: 'gemini-1.5-flash' },
-        { version: 'v1beta', model: 'gemini-2.0-flash-exp' },
-        { version: 'v1', model: 'gemini-1.5-flash-8b' }
+        { version: 'v1', model: 'gemini-1.5-flash-8b' },
+        { version: 'v1beta', model: 'gemini-2.0-flash' },
+        { version: 'v1', model: 'gemini-1.5-pro' },
+        { version: 'v1beta', model: 'gemini-1.5-pro' }
     ];
 
     let lastError = null;
 
     for (const config of attemptConfigs) {
         try {
+            console.log(`Trying ${config.model} with ${config.version}...`);
             const response = await fetch(`https://generativelanguage.googleapis.com/${config.version}/models/${config.model}:generateContent?key=${apiKey}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -48,7 +49,8 @@ async function analyzeImage(base64Image, apiKey) {
 
             if (data.error) {
                 lastError = data.error.message;
-                continue; // 다음 모델/버전 시도
+                console.warn(`Failed ${config.model}: ${lastError}`);
+                continue; 
             }
 
             if (!data.candidates || data.candidates.length === 0) {
@@ -65,11 +67,10 @@ async function analyzeImage(base64Image, apiKey) {
             throw new Error("AI 응답 형식이 올바르지 않습니다.");
 
         } catch (error) {
-            console.warn(`${config.model} (${config.version}) 시도 실패:`, error);
             lastError = error.message;
+            console.warn(`${config.model} (${config.version}) 네트워크 오류:`, error);
         }
     }
 
-    // 모든 시도 실패 시
     throw new Error(`모든 모델 시도 실패. 마지막 에러: ${lastError}`);
 }
