@@ -10,10 +10,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeSettingsBtn = document.getElementById('closeSettingsBtn');
     const saveSettingsBtn = document.getElementById('saveSettingsBtn');
     const apiKeyInput = document.getElementById('apiKey');
+    const shutterSoundInput = document.getElementById('shutterSound');
 
-    // Load saved API key
+    // Load saved settings
     const savedKey = localStorage.getItem('GEMINI_API_KEY');
     if (savedKey) apiKeyInput.value = savedKey;
+    
+    const savedSound = localStorage.getItem('SHUTTER_SOUND');
+    shutterSoundInput.checked = (savedSound === null) ? true : (savedSound === 'true');
 
     // Initialize Camera
     async function initCamera() {
@@ -29,8 +33,43 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Sound Effect Synthesizer
+    function playShutterSound() {
+        if (!shutterSoundInput.checked) return;
+        
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Generate noise for shutter sound
+        const bufferSize = audioCtx.sampleRate * 0.1; // 0.1s
+        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+            data[i] = Math.random() * 2 - 1;
+        }
+
+        const noiseSource = audioCtx.createBufferSource();
+        noiseSource.buffer = buffer;
+
+        // Filter for "click" feel
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'highpass';
+        filter.frequency.value = 1000;
+
+        const gainNode = audioCtx.createGain();
+        gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+
+        noiseSource.connect(filter);
+        filter.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        noiseSource.start();
+        noiseSource.stop(audioCtx.currentTime + 0.1);
+    }
+
     // Capture Photo
     captureBtn.addEventListener('click', async () => {
+        playShutterSound();
         const context = canvas.getContext('2d');
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
@@ -97,8 +136,9 @@ document.addEventListener('DOMContentLoaded', () => {
     saveSettingsBtn.addEventListener('click', () => {
         const key = apiKeyInput.value.trim();
         localStorage.setItem('GEMINI_API_KEY', key);
+        localStorage.setItem('SHUTTER_SOUND', shutterSoundInput.checked);
         settingsModal.classList.add('hidden');
-        alert("API 키가 저장되었습니다.");
+        alert("설정이 저장되었습니다.");
     });
 
     // Handle outside click for modal
